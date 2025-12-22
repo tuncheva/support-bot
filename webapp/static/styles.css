@@ -6,11 +6,11 @@
   --muted: #6b7280;
   --muted-2: #9ca3af;
 
-  --accent: #6d28d9; /* purple */
+  --accent: #6d28d9; 
   --accent-2: #7c3aed;
   --accent-soft: rgba(109, 40, 217, 0.10);
 
-  --user: #6d28d9; /* user bubble */
+  --user: #6d28d9; 
   --bot: #f3f4f6;
 
   --danger: #dc2626;
