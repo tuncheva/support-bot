@@ -49,11 +49,59 @@ Run the demo
 python demo.py
 ```
 
-Interactive mode
+Interactive mode (terminal)
 
 ```bash
 python main.py
 ```
+
+Web UI (Flask chat)
+
+Run the web UI (Flask chat)
+
+The web client is served by the Flask app in `webapp/app.py`. Do not open `index.html` directly in the browser — the client expects the `/api/chat` endpoint to be served by the Flask app.
+
+PowerShell:
+
+```powershell
+python webapp\app.py
+# then open http://127.0.0.1:5000 in your browser
+```
+
+cmd.exe / Batch:
+
+```bat
+python webapp\app.py
+```
+
+I also added convenience scripts to start the server:
+
+- `run_web.ps1` — PowerShell starter
+- `run_web.bat` — cmd starter
+
+Run one of these from the project root and then open http://127.0.0.1:5000
+
+1. Install dependencies (includes Flask):
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the server:
+
+```bash
+python -m webapp.app
+```
+
+3. Open:
+
+- http://127.0.0.1:5000
+
+
+- `FLASK_SECRET_KEY` — secret used to sign session cookies
+- `FLASK_DEBUG=1` — enable Flask debug mode
+- `HOST` — bind address (default `127.0.0.1`)
+- `PORT` — port (default `5000`)
 
 Lab guidance
 
