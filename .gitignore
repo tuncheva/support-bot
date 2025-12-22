@@ -24,3 +24,20 @@ build/
 
 # System files
 .DS_Store
+
+# Local logs and runtime files
+*.log
+logs/
+tmp/
+temp/
+
+# Local sqlite DBs and caches
+*.sqlite3
+*.db
+
+# OS files
+Thumbs.db
+
+# Docker
+*.env.local
+
