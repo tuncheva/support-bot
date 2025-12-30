@@ -14,10 +14,15 @@ def handle_user_query(user_input: str, debug: bool = False):
 
     If `debug` is True, also return a dict describing which tools were called and
     with what arguments.
+    Automatically detects Bulgarian language in the input.
     """
 
     tools_called: list[dict[str, Any]] = []
     text = (user_input or "").strip()
+    
+    # Detect Bulgarian language (has Cyrillic characters)
+    is_bulgarian = bool(re.search(r'[\u0400-\u04FF]', text))
+    language = "bg" if is_bulgarian else "en"
 
     # find order id like #12345 or ORD123 or just digits
     order_match = re.search(r"#?([0-9]{3,})", text)
@@ -37,54 +42,83 @@ def handle_user_query(user_input: str, debug: bool = False):
         prod_term = qmatch.group(1) or qmatch.group(2)
     else:
         # Extract potential product names (words after articles/verbs like "sell", "have", "price of")
-        # Try common patterns: "sell X", "have X", "price of X", "about X"
+        # Try patterns that capture everything after the verb
         patterns = [
-            r"(?:sell|have|price\s+of|about)\s+(?:a\s+)?(?:the\s+)?(\w+)",
-            r"(?:treadmill|skateboard|router|chair|lamp|headphone|camera|monitor|speaker|keyboard|mouse|phone|tablet|watch|charger|cable)",
+            (r"(?:sell|have|price\s+of|about|get|want)\s+(?:a\s+)?(?:an\s+)?(?:the\s+)?(.+?)(?:[?!.,]|$)", "en"),
+            (r"(?:търся|цена\s+на)\s+(.+?)(?:[?!.,]|$)", "bg"),
+            (r"(?:имате|имат)\s+(?:ли\s+)?(.+?)(?:[?!.,]|$)", "bg"),
         ]
-        for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                prod_term = match.group(1) if match.lastindex else match.group(0)
-                break
         
-        # If still no match, try to extract the longest meaningful word (skip common words)
-        if not prod_term:
-            common_words = {"do", "you", "sell", "have", "what", "can", "is", "it", "the", "a", "an", "or", "and", "price", "of", "for", "with", "in", "on", "at", "to", "that", "this", "about", "does"}
-            words = re.findall(r"\b[a-z]{3,}\b", text.lower())
-            for word in sorted(words, key=len, reverse=True):
-                if word not in common_words:
-                    prod_term = word
+        for pattern, lang in patterns:
+            if language == lang or lang is None:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    phrase = match.group(1).strip() if match.lastindex else match.group(0)
+                    prod_term = phrase
                     break
         
-        # Remove trailing 's' for plurals to improve matching
-        if prod_term and prod_term.endswith('s'):
+        # If pattern matching didn't work, try to extract meaningful words (skip common words)
+        if not prod_term:
+            common_words = {"do", "you", "sell", "have", "what", "can", "is", "it", "the", "a", "an", "or", "and", "price", "of", "for", "with", "in", "on", "at", "to", "that", "this", "about", "does", "need", "get", "want",
+                          "да", "вие", "продавате", "имате", "ли", "какво", "е", "цена", "на", "какъв", "има", "по", "един", "в", "с", "от", "за", "то", "търся", "той", "тя", "то", "трябва", "можеш", "мога", "можете"}
+            # For Bulgarian, also look for Cyrillic words; for English, look for Latin words
+            if is_bulgarian:
+                words = re.findall(r"[\u0400-\u04FF]{3,}", text, re.IGNORECASE)
+            else:
+                words = re.findall(r"\b[a-z]{3,}\b", text.lower())
+            
+            # Remove common words, then prefer shorter words (likely product names) over long descriptors
+            product_words = [w for w in set(words) if w.lower() not in common_words]
+            if product_words:
+                # Prefer shorter words (like "dryer" over "electric") for nouns
+                prod_term = min(product_words, key=lambda w: len(w))
+        
+        # Remove trailing 's' for English plurals to improve matching
+        if prod_term and language == 'en' and prod_term.endswith('s'):
             singular = prod_term[:-1]
             if len(singular) >= 3:  # Only if it makes sense
                 prod_term = singular
 
     products_found = []
     if prod_term:
-        products_found = file_search_products(prod_term)
-        tools_called.append({"tool": "file_search_products", "args": [prod_term]})
+        products_found = file_search_products(prod_term, language=language)
+        tools_called.append({"tool": "file_search_products", "args": [prod_term, language]})
+        
+        # If no matches and it's a multi-word phrase, try splitting and searching for last word
+        if not products_found and ' ' in prod_term:
+            words = prod_term.split()
+            # Try searching for the last word (usually the main noun)
+            for search_word in [words[-1]] + words[:-1]:
+                products_found = file_search_products(search_word, language=language)
+                if products_found:
+                    break
 
     # build response
+    # Build response with appropriate language
     parts: list[str] = []
     if products_found:
         p = products_found[0]
-        parts.append(f"{p['name']} — {p.get('description','')} Price: ${p['price']}")
+        name_field = 'name_bg' if language == 'bg' else 'name'
+        desc_field = 'description_bg' if language == 'bg' else 'description'
+        price_label = "Цена:" if language == 'bg' else "Price:"
+        parts.append(f"{p[name_field]} — {p.get(desc_field,'')} {price_label} ${p['price']}")
         if len(products_found) > 1:
-            parts.append(f"({len(products_found)-1} more matches found.)")
+            matches_text = "още съвпадения намерени." if language == 'bg' else "more matches found."
+            parts.append(f"({len(products_found)-1} {matches_text})")
     elif prod_term:
-        parts.append(f"No products found matching '{prod_term}'.")
+        no_match_text = f"Не са намерени продукти, отговарящи на '{prod_term}'." if language == 'bg' else f"No products found matching '{prod_term}'."
+        parts.append(no_match_text)
 
     if order_info:
-        parts.append(f"Order {order_info['order_id']} is currently {order_info['status']}.")
+        status_text = "статус" if language == 'bg' else "is currently"
+        parts.append(f"Поръчка {order_info['order_id']} {status_text} {order_info['status']}." if language == 'bg' else f"Order {order_info['order_id']} is currently {order_info['status']}.")
         if order_info.get("estimated_delivery"):
-            parts.append(f"Estimated delivery: {order_info['estimated_delivery']}")
+            est_text = "Очаквана доставка:" if language == 'bg' else "Estimated delivery:"
+            parts.append(f"{est_text} {order_info['estimated_delivery']}")
 
     if not parts:
-        parts.append("Sorry — I couldn't find product or order information in your question.")
+        sorry_text = "Съжалявам — не могах да намеря информация за продукт или поръчка във вашия въпрос." if language == 'bg' else "Sorry — I couldn't find product or order information in your question."
+        parts.append(sorry_text)
 
     response = " ".join(parts)
     if debug:
