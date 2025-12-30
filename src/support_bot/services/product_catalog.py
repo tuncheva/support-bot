@@ -31,31 +31,28 @@ class ProductCatalog:
         """Remove Bulgarian articles and case endings for matching.
         
         Handles definite articles: та (the-fem), то (the-neut), ят (the-pl), ът (the-masc)
-        Also removes common adjective endings: ски, на, ен
+        Also removes common adjective endings: ски, ска, на, ен, а
         """
         word = word.lower()
+        original_len = len(word)
         
-        # Try removing definite articles first (longer patterns first)
-        # These are the most common article patterns
         article_endings = [
-            'та',    # feminine definite: четката (the toothbrush) -> четк
-            'ята',   # feminine definite variant
-            'ято',   # neuter variant
-            'то',    # neuter definite: одеялото (the blanket) -> одеял
-            'ятo',   # plural variant
-            'ят',    # plural definite
-            'ът',    # masculine definite: генераторът (the generator) -> генератор
-            'ьт',    # masculine variant
+            'ята',
+            'ято',
+            'ятo',
+            'та',
+            'то',
+            'ят',
+            'ът',
+            'ьт',
         ]
         
         # Try each article ending, removing only one
         for ending in article_endings:
-            if word.endswith(ending) and len(word) > len(ending) + 1:
+            if word.endswith(ending) and len(word) > len(ending) + 2:
                 return word[:-len(ending)]
-        
-        # If no article found, try removing common adjective/descriptor endings
-        # but only if word is long enough
-        descriptor_endings = ['ски', 'на', 'ен', 'ни', 'я']
+        # if no article is found, try removing descriptor endings
+        descriptor_endings = ['ската', 'ски', 'ска', 'на', 'ен', 'ни', 'а']
         for ending in sorted(descriptor_endings, key=len, reverse=True):
             if word.endswith(ending) and len(word) > len(ending) + 3:
                 return word[:-len(ending)]
@@ -63,20 +60,13 @@ class ProductCatalog:
         return word
 
     def search(self, keyword: str, language: str = "en") -> list[dict[str, Any]]:
-        """Case-insensitive substring match against name/description/category.
         
-        Supports English and Bulgarian (language='en' or language='bg').
-        For multi-word queries, scores products by how many keywords they match.
-        """
-
         if not keyword:
             return []
         
-        # Determine which fields to search based on language
         name_field = "name_bg" if language == "bg" else "name"
         desc_field = "description_bg" if language == "bg" else "description"
         
-        # Split keyword into individual words for multi-word matching
         keywords = keyword.split()
         
         # Normalize keywords (especially for Bulgarian morphology)
@@ -93,34 +83,41 @@ class ProductCatalog:
             category_text = str(p.get("category", "")).lower()
             full_text = f"{name_text} {desc_text} {category_text}"
             
-            # Normalize the product text for Bulgarian
             if language == "bg":
-                # Normalize words in the product text
                 name_words = re.findall(r'[\u0400-\u04FF]+', name_text)
                 desc_words = re.findall(r'[\u0400-\u04FF]+', desc_text)
-                normalized_product_text = " ".join(
-                    [self._normalize_bulgarian(w) for w in name_words + desc_words]
-                )
-                normalized_product_text += " " + full_text  # Keep original too for fallback
+                
+                normalized_name_words = [self._normalize_bulgarian(w) for w in name_words]
+                normalized_desc_words = [self._normalize_bulgarian(w) for w in desc_words]
+                
+                normalized_product_text = " ".join(normalized_name_words + normalized_desc_words)
+                normalized_product_text += " " + full_text
             else:
                 normalized_product_text = full_text
             
-            # Score: count how many keywords match
             match_count = 0
-            for norm_kw in normalized_keywords:
+            for i, norm_kw in enumerate(normalized_keywords):
                 if norm_kw in normalized_product_text:
                     match_count += 1
+                elif keywords[i].lower() in full_text:
+                    match_count += 1
             
-            # Include products that match at least one keyword
             if match_count > 0:
-                # Boost score for exact substring matches in original text
                 bonus = 0
                 for orig_kw in keywords:
                     if orig_kw.lower() in full_text:
                         bonus += 2
+                
+                # Extra boost if product name contains the keywords (prioritize name over description)
+                if language == "bg":
+                    name_match_boost = sum(1 for nkw in normalized_keywords if nkw in " ".join(normalized_name_words))
+                    bonus += name_match_boost * 3
+                else:
+                    name_match_boost = sum(1 for kw in keywords if kw.lower() in name_text)
+                    bonus += name_match_boost * 3
+                
                 results_with_scores.append((p, match_count + bonus))
         
-        # Sort by match count (descending), keeping original order for ties
         results_with_scores.sort(key=lambda x: x[1], reverse=True)
         results = [p for p, _ in results_with_scores]
         return results

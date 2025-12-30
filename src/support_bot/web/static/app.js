@@ -52,8 +52,7 @@ function addBubble({ role, text, ts, debug }) {
 }
 
 async function postJson(url, body, { timeoutMs = 45000 } = {}) {
-  // Prevent the UI from getting stuck on "Thinking…" when the request hangs
-  // (server error, network issue, route mismatch, etc.).
+
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -117,12 +116,28 @@ function init() {
   const input = qs('#messageInput');
   const clearBtn = qs('#clearBtn');
   const debugToggle = qs('#debugToggle');
+  const themeToggle = qs('#themeToggle');
   const chat = qs('#chat');
 
   if (chat) chat.scrollTop = chat.scrollHeight;
 
   // Ensure we never load with a stuck "Thinking…" indicator.
   setLoading(false);
+
+  // Theme toggle
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    if (themeToggle) themeToggle.checked = true;
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+      const theme = themeToggle.checked ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    });
+  }
 
   if (form && input) {
     form.addEventListener('submit', async (e) => {

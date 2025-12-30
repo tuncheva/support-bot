@@ -779,8 +779,8 @@
     "description": "Foldable treadmill for home workouts.",
     "price": 799.99,
     "category": "Fitness",
-    "name_bg": "Трака за бягане",
-    "description_bg": "Сгъваема трака за бягане за домашни тренировки."
+    "name_bg": "Пътека за бягане",
+    "description_bg": "Сгъваема пътека за бягане за домашни тренировки."
   },
   {
     "id": "P1088",
@@ -824,7 +824,7 @@
     "description": "Heated blanket with temperature control.",
     "price": 79.99,
     "category": "Home",
-    "name_bg": "Электрическо одеяло",
+    "name_bg": "Електрическо одеяло",
     "description_bg": "Нагрявано одеяло с контрол на температурата."
   },
   {

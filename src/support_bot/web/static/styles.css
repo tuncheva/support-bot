@@ -6,16 +6,35 @@
   --muted: #6b7280;
   --muted-2: #9ca3af;
 
-  --accent: #6d28d9; 
-  --accent-2: #7c3aed;
-  --accent-soft: rgba(109, 40, 217, 0.10);
+  --accent: #AAD2BA; 
+  --accent-2: #8bc4a8;
+  --accent-soft: rgba(170, 210, 186, 0.10);
 
-  --user: #6d28d9; 
+  --user: #AAD2BA; 
   --bot: #f3f4f6;
 
   --danger: #dc2626;
   --shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
   --radius: 16px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-border: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --muted-2: #64748b;
+
+  --accent: #AAD2BA; 
+  --accent-2: #c4e4d4;
+  --accent-soft: rgba(170, 210, 186, 0.15);
+
+  --user: #AAD2BA; 
+  --bot: #334155;
+
+  --danger: #f87171;
+  --shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
 }
 
 * { box-sizing: border-box; }
@@ -70,16 +89,29 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--panel-border);
   background: var(--panel);
   box-shadow: none;
   user-select: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.toggle:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .toggle input {
   accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.toggle span {
+  font-weight: 500;
 }
 
 .card {
@@ -138,7 +170,7 @@ code {
 
 .bubble--user {
   background: var(--accent);
-  border-color: rgba(109, 40, 217, 0.22);
+  border-color: var(--accent-2);
   color: #ffffff;
 }
 
@@ -172,21 +204,21 @@ code {
   gap: 10px;
   padding: 14px;
   border-top: 1px solid var(--panel-border);
-  background: #fafafa;
+  background: var(--bg);
 }
 
 .composer__input {
   flex: 1;
   border-radius: 999px;
   border: 1px solid var(--panel-border);
-  background: #ffffff;
+  background: var(--panel);
   color: var(--text);
   padding: 12px 14px;
   outline: none;
 }
 
 .composer__input:focus {
-  border-color: rgba(109, 40, 217, 0.45);
+  border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
@@ -210,7 +242,7 @@ code {
 
 .btn--primary {
   background: var(--accent);
-  border-color: rgba(109, 40, 217, 0.30);
+  border-color: var(--accent-2);
   color: #ffffff;
 }
 
@@ -219,7 +251,13 @@ code {
 }
 
 .btn--secondary {
-  background: #ffffff;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.btn--secondary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .error {
@@ -238,7 +276,7 @@ code {
   gap: 8px;
   padding: 12px 14px;
   border-top: 1px solid var(--panel-border);
-  background: #fafafa;
+  background: var(--bg);
 }
 
 /* When JS removes [hidden], show it */

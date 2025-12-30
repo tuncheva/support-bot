@@ -1,4 +1,4 @@
-# Support Bot — Hands-on Lab
+# The Smart Customer Support Bot – Hands on Lab (3.2 & 3.3)
 
 This workspace contains a minimal Python support bot that can:
 

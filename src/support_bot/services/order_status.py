@@ -8,10 +8,6 @@ from typing import Any
 
 
 def getOrderStatus(order_id: str) -> dict[str, Any]:
-    """Mock order status tool.
-
-    Returns deterministic mock data based on numeric value of `order_id`.
-    """
 
     oid = re.sub(r"[^0-9]", "", str(order_id)) or "0"
     n = int(oid) if oid.isdigit() else 0
