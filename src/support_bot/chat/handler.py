@@ -27,7 +27,7 @@ def handle_user_query(user_input: str, debug: bool = False):
         order_info = getOrderStatus(oid)
         tools_called.append({"tool": "getOrderStatus", "args": [oid]})
 
-    # identify product search term - look for quoted phrases, or tokens like 'pro'
+    # identify product search term - look for quoted phrases first, then extract nouns
     prod_term = None
     # Prefer quoted phrases but avoid matching contractions (e.g., What's)
     qmatch = re.search(
@@ -36,8 +36,32 @@ def handle_user_query(user_input: str, debug: bool = False):
     if qmatch:
         prod_term = qmatch.group(1) or qmatch.group(2)
     else:
-        if "pro" in text.lower():
-            prod_term = "pro"
+        # Extract potential product names (words after articles/verbs like "sell", "have", "price of")
+        # Try common patterns: "sell X", "have X", "price of X", "about X"
+        patterns = [
+            r"(?:sell|have|price\s+of|about)\s+(?:a\s+)?(?:the\s+)?(\w+)",
+            r"(?:treadmill|skateboard|router|chair|lamp|headphone|camera|monitor|speaker|keyboard|mouse|phone|tablet|watch|charger|cable)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                prod_term = match.group(1) if match.lastindex else match.group(0)
+                break
+        
+        # If still no match, try to extract the longest meaningful word (skip common words)
+        if not prod_term:
+            common_words = {"do", "you", "sell", "have", "what", "can", "is", "it", "the", "a", "an", "or", "and", "price", "of", "for", "with", "in", "on", "at", "to", "that", "this", "about", "does"}
+            words = re.findall(r"\b[a-z]{3,}\b", text.lower())
+            for word in sorted(words, key=len, reverse=True):
+                if word not in common_words:
+                    prod_term = word
+                    break
+        
+        # Remove trailing 's' for plurals to improve matching
+        if prod_term and prod_term.endswith('s'):
+            singular = prod_term[:-1]
+            if len(singular) >= 3:  # Only if it makes sense
+                prod_term = singular
 
     products_found = []
     if prod_term:

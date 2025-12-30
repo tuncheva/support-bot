@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, session
@@ -53,10 +54,13 @@ def _append_message(msg: dict) -> None:
 
 
 def create_app() -> Flask:
+    # Get the directory where this file is located
+    web_dir = Path(__file__).parent
+    
     app = Flask(
         __name__,
-        template_folder="templates",
-        static_folder="static",
+        template_folder=str(web_dir / "templates"),
+        static_folder=str(web_dir / "static"),
     )
 
     # Session cookie signing key.
