@@ -1,3 +1,5 @@
+// client-side chat UI logic 
+
 function qs(sel) {
   return document.querySelector(sel);
 }

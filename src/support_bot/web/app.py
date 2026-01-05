@@ -9,6 +9,8 @@ from support_bot import handle_user_query
 
 load_dotenv()
 
+
+
 DEFAULT_MAX_MESSAGES = 30
 DEFAULT_MAX_MESSAGE_CHARS = 2000
 
@@ -26,7 +28,7 @@ def _get_int_env(name: str, default: int) -> int:
     except ValueError:
         return default
 
-
+# maximum character limit
 def _truncate(text: str, limit: int) -> str:
     if text is None:
         return ""
@@ -43,7 +45,7 @@ def _get_chat() -> list[dict]:
         session["chat"] = chat
     return chat
 
-
+# appends message to session chat history , max of messages 
 def _append_message(msg: dict) -> None:
     chat = _get_chat()
     chat.append(msg)
@@ -71,8 +73,9 @@ def create_app() -> Flask:
     def index():
         chat = _get_chat()
         return render_template("index.html", chat=chat)
-
-    @app.post("/api/chat")
+    
+# receives user input, cleans it, stores it in session, calls handler, returns bot reply
+    @app.post("/api/chat") 
     def api_chat():
         payload = request.get_json(silent=True) or {}
         message = payload.get("message", "")
@@ -98,6 +101,9 @@ def create_app() -> Flask:
 
         except Exception as e:
             return jsonify({"ok": False, "error": f"Server error: {e}"}), 500
+
+
+# clears chat history stored in session
 
     @app.post("/api/clear")
     def api_clear():

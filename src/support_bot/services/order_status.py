@@ -1,4 +1,4 @@
-"""Order status mock service."""
+# mock order status service.
 
 from __future__ import annotations
 

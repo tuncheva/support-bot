@@ -1,4 +1,5 @@
-"""Product catalog loading and search."""
+# Loads the product catalog from JSON and performs rule-based keyword search with scoring
+# bg normalization 
 
 from __future__ import annotations
 
